@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Où placer ce client ?</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background: #f8f8f6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .wrap { width: 100%; max-width: 660px; }
+
+  .progress-bar { display: flex; gap: 6px; margin-bottom: 20px; }
+  .progress-step { flex: 1; height: 5px; border-radius: 3px; background: #E0E0E0; transition: background 0.3s; }
+  .progress-step.done { background: #388E3C; }
+  .progress-step.active { background: #1976D2; }
+
+  .label-step { font-size: 11px; color: #999; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; }
+
+  .card-client {
+    padding: 18px 20px; border-radius: 14px; margin-bottom: 18px;
+    cursor: grab; user-select: none; transition: opacity 0.15s, transform 0.15s;
+    border-width: 2.5px; border-style: solid;
+  }
+  .card-client:active { cursor: grabbing; opacity: 0.7; transform: scale(0.98); }
+  .card-client.answered { cursor: default; }
+  .card-client-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .card-client-emoji { font-size: 28px; }
+  .card-client-name { font-size: 15px; font-weight: 700; }
+  .card-client-desc { font-size: 13px; color: #444; line-height: 1.65; }
+  .card-client-hint { font-size: 11px; font-weight: 600; opacity: 0.65; margin-top: 10px; }
+
+  .zones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .zone {
+    padding: 14px 15px; border-radius: 12px; cursor: pointer;
+    border: 2px solid #E0E0E0; background: #fafafa;
+    transition: all 0.15s; position: relative;
+  }
+  .zone:hover { transform: scale(1.02); }
+  .zone.hovered { transform: scale(1.03); }
+  .zone.correct { background: #E8F5E9 !important; border-color: #388E3C !important; }
+  .zone.wrong { background: #FCE4EC !important; border-color: #E91E63 !important; }
+  .zone.answered { cursor: default; }
+  .zone-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; margin-bottom: 6px;
+    border-width: 1.5px; border-style: solid;
+  }
+  .zone-name { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+  .zone-sub { font-size: 11px; color: #666; }
+  .zone-icon { position: absolute; top: 10px; right: 12px; font-size: 18px; }
+
+  .feedback {
+    padding: 16px 18px; border-radius: 12px; margin-bottom: 16px;
+    border-width: 2px; border-style: solid; display: none;
+  }
+  .feedback.visible { display: block; }
+  .feedback.correct { background: #E8F5E9; border-color: #388E3C; }
+  .feedback.wrong { background: #FFF9C4; border-color: #F9A825; }
+  .feedback-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .feedback.correct .feedback-title { color: #1B5E20; }
+  .feedback.wrong .feedback-title { color: #E65100; }
+  .feedback-text { font-size: 12px; color: #444; line-height: 1.7; }
+  .feedback-correct-answer { font-size: 12px; color: #1B5E20; margin-top: 8px; font-weight: 600; }
+
+  .btn-next {
+    width: 100%; padding: 14px; border-radius: 10px; border: none;
+    background: #1976D2; color: #fff; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: 'Montserrat', sans-serif;
+    display: none; transition: background 0.2s;
+  }
+  .btn-next:hover { background: #1565C0; }
+  .btn-next.visible { display: block; }
+
+  .result-wrap { text-align: center; }
+  .result-emoji { font-size: 52px; margin-bottom: 10px; }
+  .result-score { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+  .result-msg { font-size: 13px; color: #666; margin-bottom: 24px; line-height: 1.6; }
+  .result-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; text-align: left; }
+  .result-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: 10px;
+    border-width: 1.5px; border-style: solid;
+  }
+  .result-item.ok { background: #E8F5E9; border-color: #388E3C; }
+  .result-item.ko { background: #FCE4EC; border-color: #E91E63; }
+  .result-item-emoji { font-size: 20px; }
+  .result-item-label { font-size: 12px; font-weight: 700; color: #1a1a1a; }
+  .result-item-answer { font-size: 11px; color: #555; }
+  .result-item-check { margin-left: auto; font-size: 18px; }
+  .btn-restart {
+    width: 100%; padding: 14px; border-radius: 10px; border: none;
+    background: #388E3C; color: #fff; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: 'Montserrat', sans-serif; transition: background 0.2s;
+  }
+  .btn-restart:hover { background: #2E7D32; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="exercise">
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="label-step" id="labelStep"></div>
+    <div class="card-client" id="cardClient" draggable="true"></div>
+    <div class="zones-grid" id="zonesGrid"></div>
+    <div class="feedback" id="feedback">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div class="feedback-text" id="feedbackText"></div>
+      <div class="feedback-correct-answer" id="feedbackCorrect"></div>
+    </div>
+    <button class="btn-next" id="btnNext">Situation suivante →</button>
+  </div>
+  <div id="resultScreen" style="display:none;">
+    <div class="result-wrap">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-score" id="resultScore"></div>
+      <div class="result-msg" id="resultMsg"></div>
+      <div class="result-list" id="resultList"></div>
+      <button class="btn-restart" onclick="restart()">Recommencer l'exercice</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var SCENARIOS = [
+  {
+    id: 1,
+    label: "Le couple en soirée",
+    desc: "Deux personnes, tenue soignée, elles cherchent un moment calme. Vendredi soir, bar à cocktails à moitié plein.",
+    emoji: "👫",
+    bg: "#FCE4EC", border: "#E91E63", txt: "#880E4F",
+    correct: "B",
+    fb: {
+      ok: "Parfait. La zone retirée offre l'intimité attendue sans isoler le couple. Le service y est fluide et la table est à bonne hauteur.",
+      ko: {
+        A: "Le comptoir convient aux clients seuls ou pressés. Un couple en soirée y manque d'intimité — les tabourets côte à côte limitent l'échange.",
+        C: "La zone groupe est surdimensionnée pour deux personnes. Elle crée un sentiment de vide et complique le service.",
+        D: "La zone de travail est pensée pour les clients seuls. Elle manque d'ambiance pour une soirée à deux.",
+        E: "La zone accessible est réservée aux clients avec contrainte de mobilité. Elle n'est pas la priorité pour ce profil."
+      }
+    }
+  },
+  {
+    id: 2,
+    label: "Le télétravailleur",
+    desc: "Seul, ordinateur posé, casque sur les oreilles. Il entre dans un café barista en milieu de matinée.",
+    emoji: "💻",
+    bg: "#E3F2FD", border: "#1976D2", txt: "#0D47A1",
+    correct: "D",
+    fb: {
+      ok: "Excellent. La zone longue durée, calme et retirée du flux, est exactement conçue pour ce profil. Il ne gêne pas la rotation rapide des tables proches du comptoir.",
+      ko: {
+        A: "Le comptoir est un espace de passage actif. Travailler avec un ordinateur y est difficile : bruit, manque d'espace, flux constant.",
+        B: "La zone couple/intimité est inadaptée à un usage prolongé avec matériel. Les tables y sont souvent petites.",
+        C: "La zone groupe est inadaptée à un client seul. Elle mobilise inutilement un grand espace.",
+        E: "La zone accessible est réservée aux clients avec contrainte de mobilité."
+      }
+    }
+  },
+  {
+    id: 3,
+    label: "Le groupe de 5 collègues",
+    desc: "Cinq personnes bruyantes, manteaux encombrants, pas de réservation. Bar à cocktails, jeudi soir.",
+    emoji: "🎉",
+    bg: "#E8F5E9", border: "#388E3C", txt: "#1B5E20",
+    correct: "C",
+    fb: {
+      ok: "Très bien. La zone groupe en fond de salle protège les autres clients, préserve les passages de service et donne au groupe l'espace nécessaire.",
+      ko: {
+        A: "Le comptoir est conçu pour 1 à 2 personnes. Un groupe de 5 encombre le poste de préparation.",
+        B: "La zone couple ne dispose pas de l'espace suffisant pour 5 personnes avec manteaux.",
+        D: "La zone longue durée est conçue pour des clients calmes. Un groupe animé y perturbe les autres clients.",
+        E: "La zone accessible est réservée aux clients avec contrainte de mobilité."
+      }
+    }
+  },
+  {
+    id: 4,
+    label: "Le client en fauteuil roulant",
+    desc: "Seul, arrive en fauteuil roulant. Bar lounge, début de soirée. Le comptoir principal est surélevé.",
+    emoji: "♿",
+    bg: "#E8F5E9", border: "#388E3C", txt: "#1B5E20",
+    correct: "E",
+    fb: {
+      ok: "Parfait. La zone accessible est positionnée proche de l'entrée, avec espace dégagé et hauteur de table adaptée. L'installation s'opère discrètement, sans signaler la contrainte.",
+      ko: {
+        A: "Le comptoir surélevé est inaccessible en fauteuil. Ne jamais proposer cette place sans alternative adaptée.",
+        B: "Si la zone couple implique des obstacles ou une hauteur inadaptée, elle ne convient pas. L'accessibilité prime.",
+        C: "La zone groupe en fond de salle peut poser des problèmes de cheminement si la zone accessible est disponible.",
+        D: "La zone longue durée n'est pas nécessairement accessible. La zone dédiée reste le premier choix."
+      }
+    }
+  },
+  {
+    id: 5,
+    label: "Le professionnel pressé",
+    desc: "Seul, costume, mallette. Il entre d'un pas décidé, regarde directement le comptoir. Bar brasserie, heure du déjeuner.",
+    emoji: "💼",
+    bg: "#FFF9C4", border: "#F9A825", txt: "#E65100",
+    correct: "A",
+    fb: {
+      ok: "Excellent. Le comptoir correspond parfaitement : réactivité maximale, proximité du poste de préparation, service rapide. C'est exactement ce que ce client cherche.",
+      ko: {
+        B: "La zone retirée ralentit le service pour un client pressé. Il se retrouve loin du flux naturel.",
+        C: "La zone groupe est inadaptée à un client seul. Elle crée un sentiment d'isolement.",
+        D: "La zone longue durée est conçue pour les clients qui s'installent. Un professionnel pressé y attend trop longtemps.",
+        E: "La zone accessible est réservée aux clients avec contrainte de mobilité."
+      }
+    }
+  }
+];
+
+var ZONES = [
+  { id: "A", label: "Comptoir", sub: "Proximité, réactivité", bg: "#FFF9C4", border: "#F9A825", txt: "#E65100" },
+  { id: "B", label: "Table retirée", sub: "Intimité, calme", bg: "#FCE4EC", border: "#E91E63", txt: "#880E4F" },
+  { id: "C", label: "Zone groupe", sub: "Grand espace, fond de salle", bg: "#E8F5E9", border: "#388E3C", txt: "#1B5E20" },
+  { id: "D", label: "Zone longue durée", sub: "Calme, retrait, travail", bg: "#E3F2FD", border: "#1976D2", txt: "#0D47A1" },
+  { id: "E", label: "Zone accessible", sub: "Entrée, hauteur adaptée", bg: "#E8F5E9", border: "#388E3C", txt: "#1B5E20" }
+];
+
+var current = 0;
+var answers = {};
+var dragSrc = null;
+
+function render() {
+  var sc = SCENARIOS[current];
+  var ans = answers[sc.id];
+
+  // Progress
+  var pb = document.getElementById('progressBar');
+  pb.innerHTML = '';
+  for (var i = 0; i < SCENARIOS.length; i++) {
+    var d = document.createElement('div');
+    d.className = 'progress-step' + (i < current ? ' done' : i === current ? ' active' : '');
+    pb.appendChild(d);
+  }
+
+  document.getElementById('labelStep').textContent = 'Situation ' + (current + 1) + ' / ' + SCENARIOS.length;
+
+  // Client card
+  var cc = document.getElementById('cardClient');
+  cc.style.background = sc.bg;
+  cc.style.borderColor = sc.border;
+  cc.className = 'card-client' + (ans ? ' answered' : '');
+  cc.draggable = !ans;
+  cc.innerHTML =
+    '<div class="card-client-header">' +
+    '<span class="card-client-emoji">' + sc.emoji + '</span>' +
+    '<span class="card-client-name" style="color:' + sc.txt + '">' + sc.label + '</span>' +
+    '</div>' +
+    '<div class="card-client-desc">' + sc.desc + '</div>' +
+    (!ans ? '<div class="card-client-hint" style="color:' + sc.txt + '">Glissez ce client vers une zone — ou cliquez directement</div>' : '');
+
+  cc.ondragstart = function(e) { dragSrc = sc.id; e.dataTransfer.effectAllowed = 'move'; };
+  cc.ondragend = function() { dragSrc = null; };
+
+  // Zones
+  var zg = document.getElementById('zonesGrid');
+  zg.innerHTML = '';
+  ZONES.forEach(function(z) {
+    var div = document.createElement('div');
+    var isChosen = ans && ans.zone === z.id;
+    var isCorrect = z.id === sc.correct;
+    var cls = 'zone';
+    if (ans) {
+      cls += ' answered';
+      if (isCorrect) cls += ' correct';
+      else if (isChosen) cls += ' wrong';
+    }
+    div.className = cls;
+    if (!ans) {
+      div.style.background = '#fafafa';
+      div.style.borderColor = '#E0E0E0';
+    }
+    div.innerHTML =
+      '<div class="zone-badge" style="background:' + z.bg + ';border-color:' + z.border + ';color:' + z.txt + '">Zone ' + z.id + '</div>' +
+      '<div class="zone-name">' + z.label + '</div>' +
+      '<div class="zone-sub">' + z.sub + '</div>' +
+      (ans && isCorrect ? '<div class="zone-icon">✅</div>' : '') +
+      (ans && isChosen && !isCorrect ? '<div class="zone-icon">❌</div>' : '');
+
+    if (!ans) {
+      div.ondragover = function(e) { e.preventDefault(); div.classList.add('hovered'); div.style.background = z.bg; div.style.borderColor = z.border; };
+      div.ondragleave = function() { div.classList.remove('hovered'); div.style.background = '#fafafa'; div.style.borderColor = '#E0E0E0'; };
+      div.ondrop = function(e) { e.preventDefault(); choose(z.id); };
+      div.onclick = function() { choose(z.id); };
+    }
+    zg.appendChild(div);
+  });
+
+  // Feedback
+  var fb = document.getElementById('feedback');
+  var fbt = document.getElementById('feedbackTitle');
+  var fbx = document.getElementById('feedbackText');
+  var fbc = document.getElementById('feedbackCorrect');
+  if (ans) {
+    fb.className = 'feedback visible ' + (ans.correct ? 'correct' : 'wrong');
+    fbt.textContent = ans.correct ? 'Bonne réponse' : 'Pas tout à fait';
+    fbx.textContent = ans.correct ? sc.fb.ok : sc.fb.ko[ans.zone];
+    if (!ans.correct) {
+      var cz = ZONES.find(function(z) { return z.id === sc.correct; });
+      fbc.textContent = 'Bonne réponse : Zone ' + sc.correct + ' — ' + cz.label;
+      fbc.style.display = 'block';
+    } else {
+      fbc.style.display = 'none';
+    }
+  } else {
+    fb.className = 'feedback';
+    fbc.style.display = 'none';
+  }
+
+  // Btn
+  var btn = document.getElementById('btnNext');
+  if (ans) {
+    btn.className = 'btn-next visible';
+    btn.textContent = current < SCENARIOS.length - 1 ? 'Situation suivante →' : 'Voir mes résultats';
+  } else {
+    btn.className = 'btn-next';
+  }
+}
+
+function choose(zoneId) {
+  var sc = SCENARIOS[current];
+  if (answers[sc.id]) return;
+  answers[sc.id] = { zone: zoneId, correct: zoneId === sc.correct };
+  render();
+}
+
+document.getElementById('btnNext').onclick = function() {
+  if (current < SCENARIOS.length - 1) {
+    current++;
+    render();
+  } else {
+    showResult();
+  }
+};
+
+function showResult() {
+  document.getElementById('exercise').style.display = 'none';
+  var rs = document.getElementById('resultScreen');
+  rs.style.display = 'block';
+  var score = Object.values(answers).filter(function(a) { return a.correct; }).length;
+  var total = SCENARIOS.length;
+  document.getElementById('resultEmoji').textContent = score === total ? '🏆' : score >= 3 ? '👍' : '📚';
+  document.getElementById('resultScore').textContent = score + ' / ' + total + ' bonne' + (score > 1 ? 's' : '') + ' réponse' + (score > 1 ? 's' : '');
+  document.getElementById('resultMsg').textContent = score === total
+    ? 'Maîtrise parfaite du placement — tous les profils identifiés avec justesse.'
+    : score >= 3 ? 'Bonne lecture des profils. Quelques ajustements à consolider.'
+    : 'Les critères de placement sont à retravailler. Relisez le module et recommencez.';
+  var rl = document.getElementById('resultList');
+  rl.innerHTML = '';
+  SCENARIOS.forEach(function(sc) {
+    var ans = answers[sc.id];
+    var cz = ZONES.find(function(z) { return z.id === sc.correct; });
+    var div = document.createElement('div');
+    div.className = 'result-item ' + (ans && ans.correct ? 'ok' : 'ko');
+    div.innerHTML =
+      '<span class="result-item-emoji">' + sc.emoji + '</span>' +
+      '<div><div class="result-item-label">' + sc.label + '</div>' +
+      '<div class="result-item-answer">Bonne réponse : ' + cz.label + '</div></div>' +
+      '<span class="result-item-check">' + (ans && ans.correct ? '✅' : '❌') + '</span>';
+    rl.appendChild(div);
+  });
+}
+
+function restart() {
+  current = 0;
+  answers = {};
+  document.getElementById('exercise').style.display = 'block';
+  document.getElementById('resultScreen').style.display = 'none';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
